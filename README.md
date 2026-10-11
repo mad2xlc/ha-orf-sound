@@ -5,7 +5,6 @@
 # ORF Sound Timeshift Radio for Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/default)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Eine Home Assistant Custom Integration für das zeitversetzte Abspielen der österreichischen **ORF-Radiosender** (Hitradio Ö3, Radio Ö1, FM4 und alle 9 Bundesland-Sender) über das offizielle **7-Tage-Archiv (APA Loopstream)**.
 
