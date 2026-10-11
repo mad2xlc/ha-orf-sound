@@ -1,4 +1,15 @@
 {
+  "config": {
+    "step": {
+      "user": {
+        "title": "ORF Sound Timeshift Radio",
+        "description": "Möchten Sie die ORF Sound Timeshift Integration aktivieren?"
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "ORF Sound ist bereits eingerichtet."
+    }
+  },
   "services": {
     "play_timeshift": {
       "name": "Timeshift-Stream abspielen",

@@ -2,9 +2,10 @@
   "domain": "orf_sound",
   "name": "ORF Sound Timeshift Radio",
   "codeowners": [],
+  "config_flow": true,
   "documentation": "https://github.com/stefan/ha-orf-sound",
   "integration_type": "service",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/stefan/ha-orf-sound/issues",
-  "version": "1.0.0"
+  "version": "1.0.1"
 }

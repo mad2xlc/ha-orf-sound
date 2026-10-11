@@ -1,18 +1,37 @@
 """Home Assistant Integration fuer ORF Sound Timeshift Streaming."""
 
+from __future__ import annotations
+
 import datetime
 import logging
 import voluptuous as vol
 
-from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.components.media_player.const import (
     ATTR_MEDIA_CONTENT_ID,
     ATTR_MEDIA_CONTENT_TYPE,
-    ATTR_MEDIA_EXTRA,
-    MediaType,
 )
+
+# Abwaertskompatible und robuste Imports fuer HA-Versionen
+try:
+    from homeassistant.components.media_player.const import ATTR_MEDIA_EXTRA
+except ImportError:
+    ATTR_MEDIA_EXTRA = "extra"
+
+try:
+    from homeassistant.components.media_player.const import MediaType
+    MEDIA_TYPE_MUSIC = MediaType.MUSIC
+except (ImportError, AttributeError):
+    MEDIA_TYPE_MUSIC = "music"
+
+try:
+    from homeassistant.core import SupportsResponse
+    SUPPORTS_RESPONSE = SupportsResponse.ONLY
+except (ImportError, AttributeError):
+    SUPPORTS_RESPONSE = None
 
 from .api import OrfSoundClient, parse_datetime_input
 from .const import (
@@ -51,8 +70,11 @@ GET_STREAM_URL_SCHEMA = vol.Schema(
 )
 
 
-async def async_setup(hass: HomeAssistant, config: dict) -> bool:
-    """Setzt die ORF Sound Integration auf."""
+async def _async_register_services(hass: HomeAssistant) -> None:
+    """Registriert die ORF Sound Dienste, falls noch nicht registriert."""
+    if hass.services.has_service(DOMAIN, SERVICE_PLAY_TIMESHIFT):
+        return
+
     session = async_get_clientsession(hass)
     client = OrfSoundClient(session)
 
@@ -78,7 +100,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
             duration_minutes=duration,
         )
 
-    async def handle_play_timeshift(call: ServiceCall):
+    async def handle_play_timeshift(call: ServiceCall) -> None:
         """Service Handler: Loest den Stream auf und startet ihn auf dem Ziel-Player."""
         stream_data = await _resolve_from_call(call)
         entity_ids = call.data["entity_id"]
@@ -100,7 +122,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
 
         media_service_data = {
             ATTR_MEDIA_CONTENT_ID: stream_url,
-            ATTR_MEDIA_CONTENT_TYPE: MediaType.MUSIC,
+            ATTR_MEDIA_CONTENT_TYPE: MEDIA_TYPE_MUSIC,
             ATTR_MEDIA_EXTRA: {
                 "title": title,
                 "artist": artist,
@@ -129,13 +151,38 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         schema=PLAY_TIMESHIFT_SCHEMA,
     )
 
-    # get_stream_url mit supports_response fuer HA >= 2023.7
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_GET_STREAM_URL,
-        handle_get_stream_url,
-        schema=GET_STREAM_URL_SCHEMA,
-        supports_response=SupportsResponse.ONLY,
-    )
+    if SUPPORTS_RESPONSE is not None:
+        hass.services.async_register(
+            DOMAIN,
+            SERVICE_GET_STREAM_URL,
+            handle_get_stream_url,
+            schema=GET_STREAM_URL_SCHEMA,
+            supports_response=SUPPORTS_RESPONSE,
+        )
+    else:
+        hass.services.async_register(
+            DOMAIN,
+            SERVICE_GET_STREAM_URL,
+            handle_get_stream_url,
+            schema=GET_STREAM_URL_SCHEMA,
+        )
 
+
+async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+    """Setzt die Integration ueber configuration.yaml auf."""
+    await _async_register_services(hass)
+    return True
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Setzt die Integration ueber einen UI-Config-Entry auf."""
+    hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN][entry.entry_id] = entry.data
+    await _async_register_services(hass)
+    return True
+
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Entfernt einen UI-Config-Entry."""
+    hass.data.get(DOMAIN, {}).pop(entry.entry_id, None)
     return True
