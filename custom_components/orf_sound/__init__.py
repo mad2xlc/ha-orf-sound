@@ -51,6 +51,9 @@ _LOGGER = logging.getLogger(__name__)
 PLAY_TIMESHIFT_SCHEMA = vol.Schema(
     {
         vol.Optional("entity_id"): cv.entity_ids,
+        vol.Optional("device_id"): vol.Any(cv.string, [cv.string]),
+        vol.Optional("area_id"): vol.Any(cv.string, [cv.string]),
+        vol.Optional("target"): dict,
         vol.Required(ATTR_STATION): vol.In(list(STATIONS.keys())),
         vol.Optional(ATTR_TIME): cv.string,
         vol.Optional(ATTR_HOURS_AGO): vol.Coerce(float),
@@ -69,6 +72,73 @@ GET_STREAM_URL_SCHEMA = vol.Schema(
         vol.Optional(ATTR_DURATION_MINUTES): cv.positive_int,
     }
 )
+
+
+def _extract_media_player_entities(hass: HomeAssistant, call: ServiceCall) -> list[str]:
+    """Ermittelt alle Media Player Entitaets-IDs aus dem ServiceCall (Entity, Device, Area, Target)."""
+    entity_ids: set[str] = set()
+
+    # 1. HA Core Target Resolution (falls verfuegbar)
+    try:
+        from homeassistant.helpers.service import async_extract_referenced_entity_ids
+        selected = async_extract_referenced_entity_ids(hass, call)
+        if selected:
+            entity_ids.update(selected.referenced | selected.indirectly_referenced)
+    except Exception as err:
+        _LOGGER.debug("Core target extraction nicht verfuegbar oder Fehler: %s", err)
+
+    # 2. Direkte Entitaeten aus call.data und call.data.get("target")
+    data = call.data or {}
+    target_dict = data.get("target") if isinstance(data.get("target"), dict) else {}
+
+    for src in (data, target_dict):
+        e_val = src.get("entity_id")
+        if isinstance(e_val, str):
+            entity_ids.add(e_val)
+        elif isinstance(e_val, (list, tuple, set)):
+            entity_ids.update(e_val)
+
+    # 3. device_id und area_id aufloesen (ueber Entity Registry)
+    device_ids: set[str] = set()
+    area_ids: set[str] = set()
+    for src in (data, target_dict):
+        d_val = src.get("device_id")
+        if isinstance(d_val, str):
+            device_ids.add(d_val)
+        elif isinstance(d_val, (list, tuple, set)):
+            device_ids.update(d_val)
+
+        a_val = src.get("area_id")
+        if isinstance(a_val, str):
+            area_ids.add(a_val)
+        elif isinstance(a_val, (list, tuple, set)):
+            area_ids.update(a_val)
+
+    if device_ids or area_ids:
+        try:
+            from homeassistant.helpers import entity_registry as er
+            ent_reg = er.async_get(hass)
+
+            for dev_id in device_ids:
+                entries = er.async_entries_for_device(ent_reg, dev_id)
+                for entry in entries:
+                    if entry.domain == "media_player":
+                        entity_ids.add(entry.entity_id)
+
+            for a_id in area_ids:
+                entries = er.async_entries_for_area(ent_reg, a_id)
+                for entry in entries:
+                    if entry.domain == "media_player":
+                        entity_ids.add(entry.entity_id)
+        except Exception as reg_err:
+            _LOGGER.debug("Registry Lookup fehlgeschlagen: %s", reg_err)
+
+    # 4. Nur Media Player Entitaeten behalten
+    media_players = [eid for eid in entity_ids if eid.startswith("media_player.")]
+    if not media_players and entity_ids:
+        media_players = list(entity_ids)
+
+    return sorted(list(set(media_players)))
 
 
 async def _async_register_services(hass: HomeAssistant) -> None:
@@ -103,20 +173,14 @@ async def _async_register_services(hass: HomeAssistant) -> None:
 
     async def handle_play_timeshift(call: ServiceCall) -> None:
         """Service Handler: Loest den Stream auf und startet ihn auf dem Ziel-Player."""
+        entity_ids = _extract_media_player_entities(hass, call)
+        if not entity_ids:
+            raise ValueError(
+                "Kein Ziel-Player (entity_id oder device_id) angegeben. "
+                "Bitte waehle im Dienstaufruf unter 'Ziel' (target) einen Media Player aus."
+            )
+
         stream_data = await _resolve_from_call(call)
-        entity_ids = call.data.get("entity_id")
-        if not entity_ids:
-            target_dict = getattr(call, "target", None) or {}
-            entity_ids = target_dict.get("entity_id")
-
-        if isinstance(entity_ids, str):
-            entity_ids = [entity_ids]
-        elif not entity_ids:
-            entity_ids = []
-
-        if not entity_ids:
-            raise ValueError("Kein Ziel-Player (entity_id) angegeben.")
-
         stream_url = stream_data["stream_url"]
         title = stream_data.get("display_title", stream_data.get("title", stream_data["station_name"]))
         artist = stream_data["station_name"]
@@ -145,6 +209,16 @@ async def _async_register_services(hass: HomeAssistant) -> None:
 
             # Pruefen, ob es sich um einen Music Assistant Player handelt
             is_mass = entity_id.startswith("media_player.mass_") or "mass" in entity_id
+            if not is_mass:
+                try:
+                    from homeassistant.helpers import entity_registry as er
+                    ent_reg = er.async_get(hass)
+                    entry = ent_reg.async_get(entity_id)
+                    if entry and entry.platform in ("mass", "music_assistant"):
+                        is_mass = True
+                except Exception:
+                    pass
+
             mass_domain = None
             if hass.services.has_service("music_assistant", "play_media"):
                 mass_domain = "music_assistant"
