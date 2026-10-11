@@ -142,13 +142,35 @@ async def _async_register_services(hass: HomeAssistant) -> None:
 
         for entity_id in entity_ids:
             target = {"entity_id": entity_id}
-            await hass.services.async_call(
-                "media_player",
-                "play_media",
-                media_service_data,
-                target=target,
-                blocking=False,
-            )
+
+            # Pruefen, ob es sich um einen Music Assistant Player handelt
+            is_mass = entity_id.startswith("media_player.mass_") or "mass" in entity_id
+            mass_domain = None
+            if hass.services.has_service("music_assistant", "play_media"):
+                mass_domain = "music_assistant"
+            elif hass.services.has_service("mass", "play_media"):
+                mass_domain = "mass"
+
+            if is_mass and mass_domain:
+                _LOGGER.info("Uebergebe Stream an Music Assistant (%s) fuer %s", mass_domain, entity_id)
+                await hass.services.async_call(
+                    mass_domain,
+                    "play_media",
+                    {
+                        "media_id": stream_url,
+                        "media_type": "url",
+                    },
+                    target=target,
+                    blocking=False,
+                )
+            else:
+                await hass.services.async_call(
+                    "media_player",
+                    "play_media",
+                    media_service_data,
+                    target=target,
+                    blocking=False,
+                )
 
     async def handle_get_stream_url(call: ServiceCall) -> dict:
         """Service Handler: Gibt die aufgeloeste URL als Response-Data zurueck."""
