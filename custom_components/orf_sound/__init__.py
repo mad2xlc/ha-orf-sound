@@ -118,7 +118,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             raise ValueError("Kein Ziel-Player (entity_id) angegeben.")
 
         stream_url = stream_data["stream_url"]
-        title = stream_data.get("title", stream_data["station_name"])
+        title = stream_data.get("display_title", stream_data.get("title", stream_data["station_name"]))
         artist = stream_data["station_name"]
         image = stream_data.get("image_url")
 
@@ -152,7 +152,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 mass_domain = "mass"
 
             if is_mass and mass_domain:
-                _LOGGER.info("Uebergebe Stream an Music Assistant (%s) fuer %s", mass_domain, entity_id)
+                _LOGGER.info("Uebergebe Stream an Music Assistant (%s) fuer %s: %s", mass_domain, entity_id, title)
                 await hass.services.async_call(
                     mass_domain,
                     "play_media",

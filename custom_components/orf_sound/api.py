@@ -20,6 +20,16 @@ WEEKDAYS = {
     "so": 6, "sonntag": 6, "sunday": 6,
 }
 
+GERMAN_WEEKDAYS = [
+    "Montag",
+    "Dienstag",
+    "Mittwoch",
+    "Donnerstag",
+    "Freitag",
+    "Samstag",
+    "Sonntag",
+]
+
 
 def parse_datetime_input(text: str, now: datetime.datetime = None) -> datetime.datetime:
     """Parst natuerliche und absolute Zeitangaben in ein timezone-aware datetime."""
@@ -187,7 +197,23 @@ class OrfSoundClient:
             offsetende_ms = offset_ms + (duration_minutes * 60 * 1000)
             params["offsetende"] = offsetende_ms
 
-        stream_url = f"https://{host}/?{urllib.parse.urlencode(params)}"
+        day_name = GERMAN_WEEKDAYS[target_dt.weekday()]
+        time_str = target_dt.strftime("%H:%M")
+        station_name = station_info["name"]
+        broadcast_title = matched_broadcast.get("title") or station_name
+
+        # Display-Titel formatieren: Sender | Wochentag HH:MM Uhr [| Sendung]
+        clean_broadcast_title = re.sub(r'[/\\?#&"<>*|]', " ", broadcast_title).strip()
+        clean_broadcast_title = re.sub(r"\s+", " ", clean_broadcast_title)
+
+        if clean_broadcast_title and clean_broadcast_title.lower() != station_name.lower():
+            display_title = f"{station_name} | {day_name} {time_str} Uhr | {clean_broadcast_title}"
+        else:
+            display_title = f"{station_name} | {day_name} {time_str} Uhr"
+
+        # Stream-URL mit Fragment-Dateinamen fuer Music Assistant, DLNA und Player
+        # Sorgt dafuer, dass Yamaha MusicCast und Music Assistant den sauberen Titel anzeigen
+        stream_url = f"https://{host}/?{urllib.parse.urlencode(params)}#/{display_title}.mp3"
 
         # Bild ermitteln (Cover oder Sendungslogo)
         image_url = None
@@ -206,6 +232,9 @@ class OrfSoundClient:
             "station_key": station_key,
             "station_name": station_info["name"],
             "title": matched_broadcast.get("title", station_info["name"]),
+            "display_title": display_title,
+            "day_name": day_name,
+            "time_str": time_str,
             "subtitle": matched_broadcast.get("subtitle"),
             "moderator": matched_broadcast.get("moderator"),
             "program_key": matched_broadcast.get("programKey"),
