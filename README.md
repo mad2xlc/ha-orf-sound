@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="icon.png" width="160" alt="ORF Sound Timeshift Radio Logo" />
+</p>
+
 # ORF Sound Timeshift Radio for Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/default)
