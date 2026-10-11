@@ -135,7 +135,7 @@ class OrfSoundClient:
         # Sendung ermitteln, die target_ms umfasst
         matched_broadcast = None
         for day_entry in days:
-            for b in day_entry.get("broadcasts", []):
+            for b in (day_entry.get("broadcasts") or []):
                 b_start = b.get("start")
                 b_end = b.get("end")
                 if b_start is not None and b_end is not None:
@@ -162,8 +162,8 @@ class OrfSoundClient:
                 raise RuntimeError(f"Fehler beim Abrufen der Sendungsdetails (HTTP {resp.status})")
             detail_data = await resp.json()
 
-        streams = detail_data.get("streams", [])
-        if not streams or not streams[0].get("loopStreamId"):
+        streams = detail_data.get("streams") or []
+        if not streams or not isinstance(streams, list) or not streams[0].get("loopStreamId"):
             raise RuntimeError("In den Sendungsdetails wurden keine gueltigen Stream-Informationen gefunden.")
 
         stream_info = streams[0]
@@ -191,9 +191,12 @@ class OrfSoundClient:
 
         # Bild ermitteln (Cover oder Sendungslogo)
         image_url = None
-        for img in matched_broadcast.get("images", []) + detail_data.get("images", []):
-            versions = img.get("versions", [])
-            if versions and isinstance(versions, list) and len(versions) > 0:
+        all_images = (matched_broadcast.get("images") or []) + (detail_data.get("images") or [])
+        for img in all_images:
+            if not isinstance(img, dict):
+                continue
+            versions = img.get("versions") or []
+            if isinstance(versions, list) and len(versions) > 0:
                 v = versions[0]
                 if isinstance(v, dict) and "path" in v:
                     image_url = v["path"]

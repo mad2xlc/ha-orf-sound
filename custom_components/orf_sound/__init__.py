@@ -50,13 +50,14 @@ _LOGGER = logging.getLogger(__name__)
 
 PLAY_TIMESHIFT_SCHEMA = vol.Schema(
     {
-        vol.Required("entity_id"): cv.entity_ids,
+        vol.Optional("entity_id"): cv.entity_ids,
         vol.Required(ATTR_STATION): vol.In(list(STATIONS.keys())),
         vol.Optional(ATTR_TIME): cv.string,
         vol.Optional(ATTR_HOURS_AGO): vol.Coerce(float),
         vol.Optional(ATTR_MINUTES_AGO): vol.Coerce(float),
         vol.Optional(ATTR_DURATION_MINUTES): cv.positive_int,
-    }
+    },
+    extra=vol.ALLOW_EXTRA,
 )
 
 GET_STREAM_URL_SCHEMA = vol.Schema(
@@ -103,9 +104,18 @@ async def _async_register_services(hass: HomeAssistant) -> None:
     async def handle_play_timeshift(call: ServiceCall) -> None:
         """Service Handler: Loest den Stream auf und startet ihn auf dem Ziel-Player."""
         stream_data = await _resolve_from_call(call)
-        entity_ids = call.data["entity_id"]
+        entity_ids = call.data.get("entity_id")
+        if not entity_ids:
+            target_dict = getattr(call, "target", None) or {}
+            entity_ids = target_dict.get("entity_id")
+
         if isinstance(entity_ids, str):
             entity_ids = [entity_ids]
+        elif not entity_ids:
+            entity_ids = []
+
+        if not entity_ids:
+            raise ValueError("Kein Ziel-Player (entity_id) angegeben.")
 
         stream_url = stream_data["stream_url"]
         title = stream_data.get("title", stream_data["station_name"])
