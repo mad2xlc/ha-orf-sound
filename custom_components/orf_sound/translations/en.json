@@ -1,0 +1,56 @@
+{
+  "services": {
+    "play_timeshift": {
+      "name": "Play Timeshift Stream",
+      "description": "Resolves the appropriate broadcast for the requested ORF station and timestamp, and starts playback on the target media player (e.g. Yamaha MusicCast or Music Assistant).",
+      "fields": {
+        "station": {
+          "name": "Radio Station",
+          "description": "The desired ORF radio station."
+        },
+        "time": {
+          "name": "Timestamp",
+          "description": "Absolute or natural time string (e.g. 'Sonntag 6:00 Uhr', '06:00', 'gestern 18:00')."
+        },
+        "hours_ago": {
+          "name": "Hours ago",
+          "description": "Relative delay in hours."
+        },
+        "minutes_ago": {
+          "name": "Additional minutes",
+          "description": "Additional relative delay in minutes."
+        },
+        "duration_minutes": {
+          "name": "Duration (minutes)",
+          "description": "Optional playback duration in minutes."
+        }
+      }
+    },
+    "get_stream_url": {
+      "name": "Get Timeshift Stream URL",
+      "description": "Resolves the APA Loopstream URL and returns it as response data.",
+      "fields": {
+        "station": {
+          "name": "Radio Station",
+          "description": "The desired ORF radio station."
+        },
+        "time": {
+          "name": "Timestamp",
+          "description": "Absolute or natural time string."
+        },
+        "hours_ago": {
+          "name": "Hours ago",
+          "description": "Relative delay in hours."
+        },
+        "minutes_ago": {
+          "name": "Additional minutes",
+          "description": "Additional relative delay in minutes."
+        },
+        "duration_minutes": {
+          "name": "Duration (minutes)",
+          "description": "Optional duration in minutes."
+        }
+      }
+    }
+  }
+}

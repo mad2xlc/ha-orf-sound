@@ -1,0 +1,154 @@
+play_timeshift:
+  name: Timeshift-Stream abspielen
+  description: Ermittelt fuer den gewuenschten ORF-Radiosender und Zeitpunkt die passende Sendung und startet die Wiedergabe auf dem Ziel-Player (z.B. Yamaha MusicCast oder Music Assistant).
+  target:
+    entity:
+      domain: media_player
+  fields:
+    station:
+      name: Radiosender
+      description: Der gewuenschte ORF-Sender.
+      required: true
+      default: oe3
+      selector:
+        select:
+          options:
+            - label: "Hitradio Ö3"
+              value: oe3
+            - label: "Radio Ö1"
+              value: oe1
+            - label: "Radio FM4"
+              value: fm4
+            - label: "Radio Wien"
+              value: wie
+            - label: "Radio Niederösterreich"
+              value: noe
+            - label: "Radio Oberösterreich"
+              value: ooe
+            - label: "Radio Salzburg"
+              value: sbg
+            - label: "Radio Kärnten"
+              value: ktn
+            - label: "Radio Steiermark"
+              value: stm
+            - label: "Radio Tirol"
+              value: tir
+            - label: "Radio Vorarlberg"
+              value: vbg
+            - label: "Radio Burgenland"
+              value: bgl
+    time:
+      name: Zeitpunkt
+      description: "Absoluter oder natuerlicher Zeitpunkt (z.B. 'Sonntag 6:00 Uhr', '06:00', 'gestern 18:00', '11.10.2026 06:00')."
+      example: "Sonntag 6:00 Uhr"
+      selector:
+        text:
+    hours_ago:
+      name: Stunden zurueck (relativ)
+      description: "Alternative: Relative Verzoegerung in Stunden (Standard: 1.0, falls kein 'time' angegeben ist)."
+      example: 1.5
+      selector:
+        number:
+          min: 0.1
+          max: 168.0
+          step: 0.5
+          mode: box
+          unit_of_measurement: h
+    minutes_ago:
+      name: Zusaetzliche Minuten (relativ)
+      description: Zusaetzliche relative Verzoegerung in Minuten.
+      example: 30
+      selector:
+        number:
+          min: 0
+          max: 60
+          step: 5
+          mode: slider
+          unit_of_measurement: min
+    duration_minutes:
+      name: Dauer (Minuten)
+      description: Optionale Begrenzung der Wiedergabe / Clip-Laenge in Minuten.
+      example: 60
+      selector:
+        number:
+          min: 1
+          max: 300
+          step: 5
+          mode: box
+          unit_of_measurement: min
+
+get_stream_url:
+  name: Timeshift-Stream URL abfragen
+  description: Ermittelt die APA-Loopstream URL fuer einen Zeitpunkt und gibt sie als Variable an die Automation zurueck (Response Data).
+  fields:
+    station:
+      name: Radiosender
+      description: Der gewuenschte ORF-Sender.
+      required: true
+      default: oe3
+      selector:
+        select:
+          options:
+            - label: "Hitradio Ö3"
+              value: oe3
+            - label: "Radio Ö1"
+              value: oe1
+            - label: "Radio FM4"
+              value: fm4
+            - label: "Radio Wien"
+              value: wie
+            - label: "Radio Niederösterreich"
+              value: noe
+            - label: "Radio Oberösterreich"
+              value: ooe
+            - label: "Radio Salzburg"
+              value: sbg
+            - label: "Radio Kärnten"
+              value: ktn
+            - label: "Radio Steiermark"
+              value: stm
+            - label: "Radio Tirol"
+              value: tir
+            - label: "Radio Vorarlberg"
+              value: vbg
+            - label: "Radio Burgenland"
+              value: bgl
+    time:
+      name: Zeitpunkt
+      description: "Absoluter oder natuerlicher Zeitpunkt (z.B. 'Sonntag 6:00 Uhr', '06:00', 'gestern 18:00')."
+      example: "Sonntag 6:00 Uhr"
+      selector:
+        text:
+    hours_ago:
+      name: Stunden zurueck (relativ)
+      description: Relative Verzoegerung in Stunden.
+      example: 1.0
+      selector:
+        number:
+          min: 0.1
+          max: 168.0
+          step: 0.5
+          mode: box
+          unit_of_measurement: h
+    minutes_ago:
+      name: Zusaetzliche Minuten (relativ)
+      description: Zusaetzliche relative Verzoegerung in Minuten.
+      example: 0
+      selector:
+        number:
+          min: 0
+          max: 60
+          step: 5
+          mode: slider
+          unit_of_measurement: min
+    duration_minutes:
+      name: Dauer (Minuten)
+      description: Optionale Begrenzung der Dauer in Minuten.
+      example: 60
+      selector:
+        number:
+          min: 1
+          max: 300
+          step: 5
+          mode: box
+          unit_of_measurement: min

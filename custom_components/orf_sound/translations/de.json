@@ -1,0 +1,56 @@
+{
+  "services": {
+    "play_timeshift": {
+      "name": "Timeshift-Stream abspielen",
+      "description": "Ermittelt fuer den gewuenschten ORF-Radiosender und Zeitpunkt die passende Sendung und startet die Wiedergabe auf dem Ziel-Player (z.B. Yamaha MusicCast oder Music Assistant).",
+      "fields": {
+        "station": {
+          "name": "Radiosender",
+          "description": "Der gewuenschte ORF-Sender."
+        },
+        "time": {
+          "name": "Zeitpunkt",
+          "description": "Absoluter oder natuerlicher Zeitpunkt (z.B. 'Sonntag 6:00 Uhr', '06:00', 'gestern 18:00')."
+        },
+        "hours_ago": {
+          "name": "Stunden zurueck",
+          "description": "Relative Verzoegerung in Stunden."
+        },
+        "minutes_ago": {
+          "name": "Zusaetzliche Minuten",
+          "description": "Zusaetzliche relative Verzoegerung in Minuten."
+        },
+        "duration_minutes": {
+          "name": "Dauer (Minuten)",
+          "description": "Optionale Begrenzung der Wiedergabe in Minuten."
+        }
+      }
+    },
+    "get_stream_url": {
+      "name": "Timeshift-Stream URL abfragen",
+      "description": "Ermittelt die APA-Loopstream URL fuer einen Zeitpunkt und gibt sie als Variable zurueck.",
+      "fields": {
+        "station": {
+          "name": "Radiosender",
+          "description": "Der gewuenschte ORF-Sender."
+        },
+        "time": {
+          "name": "Zeitpunkt",
+          "description": "Absoluter oder natuerlicher Zeitpunkt."
+        },
+        "hours_ago": {
+          "name": "Stunden zurueck",
+          "description": "Relative Verzoegerung in Stunden."
+        },
+        "minutes_ago": {
+          "name": "Zusaetzliche Minuten",
+          "description": "Zusaetzliche relative Verzoegerung in Minuten."
+        },
+        "duration_minutes": {
+          "name": "Dauer (Minuten)",
+          "description": "Optionale Begrenzung der Dauer in Minuten."
+        }
+      }
+    }
+  }
+}
