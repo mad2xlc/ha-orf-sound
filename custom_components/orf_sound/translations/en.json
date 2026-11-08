@@ -21,7 +21,7 @@
         },
         "time": {
           "name": "Timestamp",
-          "description": "Absolute or natural time string (e.g. 'Sonntag 6:00 Uhr', '06:00', 'gestern 18:00')."
+          "description": "Absolute or natural time string (e.g. 'Sonntag 6:00 Uhr', 'Sonntag *:00 Uhr' for latest full hour, '*:00', '06:00', 'gestern 18:00')."
         },
         "hours_ago": {
           "name": "Hours ago",

@@ -37,7 +37,7 @@ def parse_datetime_input(text: str, now: datetime.datetime = None) -> datetime.d
         now = datetime.datetime.now().astimezone()
 
     s = text.strip().lower()
-    s = re.sub(r"\buhr\b", "", s).strip()
+    s = re.sub(r"\s*uhr\b", "", s).strip()
 
     # 1. ISO 8601 (z.B. 2026-10-11T06:00:00 oder 2026-10-11 06:00)
     for fmt in (
@@ -52,25 +52,31 @@ def parse_datetime_input(text: str, now: datetime.datetime = None) -> datetime.d
         except ValueError:
             pass
 
-    # 2. Deutsches Format (11.10.2026 06:00 oder 11.10. 06:00)
+    # 2. Deutsches Format (11.10.2026 06:00, 11.10. 06:00, 11.10. *:00)
     m = re.match(
-        r"^(\d{1,2})\.(\d{1,2})\.(?:(\d{4})\s+)?(\d{1,2}):(\d{2})(?::(\d{2}))?$",
+        r"^(\d{1,2})\.(\d{1,2})\.(?:(\d{4})\s+)?(?:\s*(\*|\d{1,2}):(\d{2})(?::(\d{2}))?|\s*\*)$",
         s,
     )
     if m:
-        day, month, year, hour, minute, second = m.groups()
+        day, month, year, hour_str, minute_str, second_str = m.groups()
         year = int(year) if year else now.year
-        second = int(second) if second else 0
-        dt = datetime.datetime(year, int(month), int(day), int(hour), int(minute), second)
-        return dt.replace(tzinfo=now.tzinfo)
+        second = int(second_str) if second_str else 0
+        minute = int(minute_str) if minute_str else 0
+        is_wildcard = (hour_str == "*" or hour_str is None)
+        hour = now.hour if is_wildcard else int(hour_str)
+        dt = datetime.datetime(year, int(month), int(day), hour, minute, second, tzinfo=now.tzinfo)
+        if is_wildcard and dt > now:
+            dt -= datetime.timedelta(hours=1)
+        return dt
 
-    # 3. Wochentag oder Heute/Gestern + Uhrzeit (z.B. "Sonntag 06:00", "Gestern 14:00")
-    m_day = re.match(r"^([a-zäöü]+)\s+(\d{1,2}):(\d{2})(?::(\d{2}))?$", s)
+    # 3. Wochentag oder Heute/Gestern + Uhrzeit (z.B. "Sonntag 06:00", "Sonntag *:00", "Sonntag *", "Gestern 14:00")
+    m_day = re.match(r"^([a-zäöü]+)\s+(?:(\*|\d{1,2}):(\d{2})(?::(\d{2}))?|\*)$", s)
     if m_day:
-        day_word, hour, minute, second = m_day.groups()
-        hour = int(hour)
-        minute = int(minute)
-        second = int(second) if second else 0
+        day_word, hour_str, minute_str, second_str = m_day.groups()
+        is_wildcard = (hour_str == "*" or hour_str is None)
+        hour = now.hour if is_wildcard else int(hour_str)
+        minute = int(minute_str) if minute_str else 0
+        second = int(second_str) if second_str else 0
 
         target_date = None
         if day_word in ("heute", "today"):
@@ -85,29 +91,37 @@ def parse_datetime_input(text: str, now: datetime.datetime = None) -> datetime.d
         else:
             raise ValueError(f"Unbekannte Tagesangabe: '{day_word}'")
 
-        dt = datetime.datetime(target_date.year, target_date.month, target_date.day, hour, minute, second)
-        dt = dt.replace(tzinfo=now.tzinfo)
+        dt = datetime.datetime(target_date.year, target_date.month, target_date.day, hour, minute, second, tzinfo=now.tzinfo)
+
+        # Bei Wildcard-Stunde (*): Falls berechnete Zeit in der Zukunft liegt, 1 Stunde zurueck
+        if is_wildcard and dt > now:
+            dt -= datetime.timedelta(hours=1)
 
         # Wenn heute der Wochentag ist und die Uhrzeit noch in der Zukunft liegt, nimm Vorwoche
         if dt > now and day_word in WEEKDAYS:
             dt -= datetime.timedelta(days=7)
         return dt
 
-    # 4. Reine Uhrzeit (z.B. "06:00", "6:00")
-    m_time = re.match(r"^(\d{1,2}):(\d{2})(?::(\d{2}))?$", s)
+    # 4. Reine Uhrzeit (z.B. "06:00", "6:00", "*:00", "*")
+    m_time = re.match(r"^(?:(\*|\d{1,2}):(\d{2})(?::(\d{2}))?|\*)$", s)
     if m_time:
-        hour, minute, second = m_time.groups()
-        hour = int(hour)
-        minute = int(minute)
-        second = int(second) if second else 0
+        hour_str, minute_str, second_str = m_time.groups()
+        is_wildcard = (hour_str == "*" or hour_str is None)
+        hour = now.hour if is_wildcard else int(hour_str)
+        minute = int(minute_str) if minute_str else 0
+        second = int(second_str) if second_str else 0
         dt = datetime.datetime(now.year, now.month, now.day, hour, minute, second, tzinfo=now.tzinfo)
-        # Wenn Uhrzeit heute noch in der Zukunft liegt, nimm gestern
-        if dt > now:
+
+        # Bei Wildcard-Stunde (*): Falls berechnete Zeit in der Zukunft liegt, 1 Stunde zurueck
+        if is_wildcard and dt > now:
+            dt -= datetime.timedelta(hours=1)
+        elif dt > now:
+            # Feste Uhrzeit liegt heute noch in der Zukunft -> gestern nehmen
             dt -= datetime.timedelta(days=1)
         return dt
 
     raise ValueError(
-        f"Ungueltiges Datums-/Zeitformat: '{text}'. Beispiele: 'Sonntag 6:00 Uhr', '06:00', 'gestern 18:00'"
+        f"Ungueltiges Datums-/Zeitformat: '{text}'. Beispiele: 'Sonntag 6:00 Uhr', 'Sonntag *:00 Uhr', '*:00', '06:00', 'gestern 18:00'"
     )
 
 

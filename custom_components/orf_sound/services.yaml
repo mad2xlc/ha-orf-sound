@@ -39,8 +39,8 @@ play_timeshift:
               value: bgl
     time:
       name: Zeitpunkt
-      description: "Absoluter oder natuerlicher Zeitpunkt (z.B. 'Sonntag 6:00 Uhr', '06:00', 'gestern 18:00', '11.10.2026 06:00')."
-      example: "Sonntag 6:00 Uhr"
+      description: "Absoluter oder natuerlicher Zeitpunkt (z.B. 'Sonntag 6:00 Uhr', 'Sonntag *:00 Uhr' fuer letzte volle Stunde, '*:00', '06:00', 'gestern 18:00', '11.10.2026 06:00')."
+      example: "Sonntag *:00 Uhr"
       selector:
         text:
     hours_ago:
@@ -115,8 +115,8 @@ get_stream_url:
               value: bgl
     time:
       name: Zeitpunkt
-      description: "Absoluter oder natuerlicher Zeitpunkt (z.B. 'Sonntag 6:00 Uhr', '06:00', 'gestern 18:00')."
-      example: "Sonntag 6:00 Uhr"
+      description: "Absoluter oder natuerlicher Zeitpunkt (z.B. 'Sonntag 6:00 Uhr', 'Sonntag *:00 Uhr' fuer letzte volle Stunde, '*:00', '06:00', 'gestern 18:00')."
+      example: "Sonntag *:00 Uhr"
       selector:
         text:
     hours_ago:

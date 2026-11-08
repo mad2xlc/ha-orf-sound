@@ -13,7 +13,7 @@ Eine Home Assistant Custom Integration für das zeitversetzte Abspielen der öst
 ## ✨ Features
 
 - **Sekundengenauer Timeshift:** Starte Radiosendungen zu jedem beliebigen Zeitpunkt der letzten 7 Tage.
-- **Natürliche Zeitangaben:** Unterstützt Angaben wie `"Sonntag 6:00 Uhr"`, `"Sonntag 06:00"`, `"gestern 18:00"`, `"06:00"` oder ISO-Datumsformate.
+- **Natürliche Zeitangaben & Wildcards:** Unterstützt Angaben wie `"Sonntag 6:00 Uhr"`, `"Sonntag *:00 Uhr"` (letzte volle Stunde, z.B. 06:00 wenn es 06:46 ist), `"*:00"`, `"gestern 18:00"`, `"06:00"` oder ISO-Datumsformate.
 - **Volle Player-Kompatibilität:**
   - 🎵 **Yamaha MusicCast** (nativ via `media_player.play_media`)
   - 🎶 **Music Assistant** (`media_player.mass_...`)

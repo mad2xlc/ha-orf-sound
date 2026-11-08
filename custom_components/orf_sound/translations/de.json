@@ -21,7 +21,7 @@
         },
         "time": {
           "name": "Zeitpunkt",
-          "description": "Absoluter oder natuerlicher Zeitpunkt (z.B. 'Sonntag 6:00 Uhr', '06:00', 'gestern 18:00')."
+          "description": "Absoluter oder natuerlicher Zeitpunkt (z.B. 'Sonntag 6:00 Uhr', 'Sonntag *:00 Uhr' fuer letzte volle Stunde, '*:00', '06:00', 'gestern 18:00')."
         },
         "hours_ago": {
           "name": "Stunden zurueck",
