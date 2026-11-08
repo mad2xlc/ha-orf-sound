@@ -225,19 +225,19 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             elif hass.services.has_service("mass", "play_media"):
                 mass_domain = "mass"
 
-            if is_mass and mass_domain:
-                _LOGGER.info("Uebergebe Stream an Music Assistant (%s) fuer %s: %s", mass_domain, entity_id, title)
-                await hass.services.async_call(
-                    mass_domain,
-                    "play_media",
-                    {
-                        "media_id": stream_url,
-                        "media_type": "url",
-                    },
-                    target=target,
-                    blocking=False,
-                )
-            else:
+            _LOGGER.info(
+                "Starte ORF Timeshift (%s: '%s') auf %s (MASS=%s): %s",
+                artist,
+                title,
+                entity_id,
+                is_mass,
+                stream_url,
+            )
+
+            # Standardmaessig immer ueber media_player.play_media aufrufen,
+            # da dies von allen Plattformen (inkl. Music Assistant) unterstuetzt wird
+            # und Metadaten (Titel, Interpret, Bild) sauber uebermittelt.
+            try:
                 await hass.services.async_call(
                     "media_player",
                     "play_media",
@@ -245,6 +245,26 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                     target=target,
                     blocking=False,
                 )
+            except Exception as play_err:
+                if is_mass and mass_domain:
+                    _LOGGER.warning(
+                        "media_player.play_media auf %s fehlgeschlagen (%s), versuche Fallback auf %s.play_media",
+                        entity_id,
+                        play_err,
+                        mass_domain,
+                    )
+                    await hass.services.async_call(
+                        mass_domain,
+                        "play_media",
+                        {
+                            "media_id": stream_url,
+                            "media_type": "radio",
+                        },
+                        target=target,
+                        blocking=False,
+                    )
+                else:
+                    raise
 
     async def handle_get_stream_url(call: ServiceCall) -> dict:
         """Service Handler: Gibt die aufgeloeste URL als Response-Data zurueck."""

@@ -225,9 +225,11 @@ class OrfSoundClient:
         else:
             display_title = f"{station_name} | {day_name} {time_str} Uhr"
 
-        # Stream-URL mit Fragment-Dateinamen fuer Music Assistant, DLNA und Player
-        # Sorgt dafuer, dass Yamaha MusicCast und Music Assistant den sauberen Titel anzeigen
-        stream_url = f"https://{host}/?{urllib.parse.urlencode(params)}#/{display_title}.mp3"
+        # Stream-URL mit Prozent-kodiertem Fragment-Dateinamen fuer Music Assistant, DLNA und Player
+        # Sorgt dafuer, dass Yamaha MusicCast und Music Assistant den sauberen Titel anzeigen,
+        # ohne dass Sonderzeichen (Leerzeichen, |, Umlaute) den Player/ffprobe stoeren.
+        encoded_title = urllib.parse.quote(f"{display_title}.mp3")
+        stream_url = f"https://{host}/?{urllib.parse.urlencode(params)}#/{encoded_title}"
 
         # Bild ermitteln (Cover oder Sendungslogo)
         image_url = None
